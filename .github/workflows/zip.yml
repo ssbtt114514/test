@@ -1,4 +1,4 @@
-name: 手动解压压缩包
+name: zip
 
 on:
   workflow_dispatch:  # 手动触发，点击按钮才执行
