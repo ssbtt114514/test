@@ -1,9 +1,7 @@
-name: 解压并去掉最外层目录
+name: 手动解压压缩包
 
 on:
-  push:
-    paths:
-      - '*.zip'
+  workflow_dispatch:  # 手动触发，点击按钮才执行
 
 jobs:
   unzip:
@@ -13,30 +11,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 解压并移除最外层目录
+      - name: 解压并去掉最外层目录
         run: |
           for zipfile in *.zip; do
-            # 1. 解压到临时文件夹
+            # 如果没有 zip 文件，退出
+            [ -e "$zipfile" ] || continue
+            
+            # 解压到临时目录
             unzip "$zipfile" -d temp_extract/
             
-            # 2. 获取临时文件夹里的第一层内容
-            #    （如果zip里只有一个文件夹，就是它；如果是多个文件/文件夹，直接移出来）
+            # 检查是否只有一个文件夹
             cd temp_extract
-            # 如果有且仅有一个文件夹，且没有其他文件，就移出它的内容
             items=(*)
             if [ ${#items[@]} -eq 1 ] && [ -d "${items[0]}" ]; then
-              # 只有一个文件夹 -> 把里面的内容移到上一级
+              # 只有一个文件夹 -> 移出内容
               mv "${items[0]}"/* ../
               cd ..
               rm -rf temp_extract
             else
-              # 多个文件/文件夹 -> 全部移到上一级
+              # 多个内容 -> 全部移出
               mv * ../
               cd ..
               rm -rf temp_extract
             fi
             
-            # 3. 删除原zip
+            # 删除原始 zip
             rm -f "$zipfile"
           done
 
@@ -45,5 +44,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "自动解压并移除最外层目录" || echo "无变更"
+          git commit -m "手动解压完成" || echo "无变更需要提交"
           git push
